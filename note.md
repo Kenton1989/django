@@ -18,10 +18,30 @@
           - self.run
             - determine if self.inner_run should restart when exception happens
             - self.inner_run
-              - self.check (if not skipped; django's Check framework is used here)
+              - self.check (if not skipped; **django's Check** framework is used here)
               - self.migration_check (sync django's model with database)
-              - self.get_handler (which returns a django.core.handlers.wsgi.WSGIHandler)
+              - self.get_handler
+                - constructor: django.core.handlers.wsgi.WSGIHandler.__init__
+                  - load middleware (**django's middleware** framework)
               - call django.core.servers.basehttp.run with the fetched handler and configurations like address/port 
                 - create django.core.servers.basehttp.WSGIServer (which inherits wsgiref.simple_server.WSGIServer)
                 - set handler for server
                 - server.serve_forever()
+- Handling request after calling runserver
+  - wsgiref package calls django.core.handlers.wsgi.WSGIHandler.__call__
+    - set script prefix (???)
+    - send request start signal
+    - construct request class (django.core.handlers.wsgi.WSGIRequest.__init__)
+      - it is derived from django.http.request.HTTPRequest
+    - self.get_response (inherit from django.core.handlers.base.BaseHandler)
+      - call all the middleware
+        - self._get_response (inherit from django.core.handlers.base.BaseHandler)
+          - resolve the view being used (**django's urls** framework)
+          - apply compulsory view middleware
+          - call the user defined view to get response
+          - check if the response is None
+          - apply template middleware is render method is detected
+          - return response
+    - return response
+  - wsgiref call django.http.response.HttpResponseBase.close
+    - send request finished signal

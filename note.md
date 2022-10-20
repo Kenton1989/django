@@ -1,1 +1,27 @@
 # Django notes
+
+- Entry point program: the manage.py script, which calls  django.core.management.__init__.execute_from_command_line
+- Calling runserver:
+  - management.__init__.ManagementUtility.execute
+    - parse argv
+    - fetch configurations
+    - fetch installed applications list
+    - run django.__init__.setup
+      - load all installed applications
+    - command auto complete
+    - fetch subcommand ('runserver' in this case) and run with argv
+    - execute django.core.management.commands.runserver.run_from_argv (inherited from django.core.management.commands.base.BaseCommand)
+      - parse argument
+      - self.execute
+        - self.handle
+          - determine address, port, enabling debug etc.
+          - self.run
+            - determine if self.inner_run should restart when exception happens
+            - self.inner_run
+              - self.check (if not skipped; django's Check framework is used here)
+              - self.migration_check (sync django's model with database)
+              - self.get_handler (which returns a django.core.handlers.wsgi.WSGIHandler)
+              - call django.core.servers.basehttp.run with the fetched handler and configurations like address/port 
+                - create django.core.servers.basehttp.WSGIServer (which inherits wsgiref.simple_server.WSGIServer)
+                - set handler for server
+                - server.serve_forever()
